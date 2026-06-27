@@ -8,23 +8,17 @@ const G = require('../js/game.js');
 require('../js/sharecode.js');
 const RShare = global.RShare;
 const RU = global.RU;
-
-const PHRASE = [
-  ['E5',4,1,0,659.26],['D#5',3,1,1,622.25],['E5',4,1,0,659.26],['D#5',3,1,1,622.25],
-  ['E5',4,1,0,659.26],['B4',1,1,0,493.88],['D5',3,1,0,587.33],['C5',2,1,0,523.25],
-  ['A4',0,1,0,440.00],['C4',2,0,0,261.63],['E4',4,0,0,329.63],['A4',0,1,0,440.00],
-  ['B4',1,1,0,493.88],['E4',4,0,0,329.63],['G#4',6,0,1,415.30],['B4',1,1,0,493.88],
-  ['C5',2,1,0,523.25],
-];
+const { PHRASE, layout } = require('./furelise-layout.js');
 
 const st = G.makeState(1);
 st.energy = 999999; st.musicality = 0;
-const COLS = G.CONFIG.COLS;
-PHRASE.forEach(([name,deg,oct,acc],i) => {
-  const c = i % COLS;
-  const r = G.CONFIG.ROWS - 1 - Math.floor(i / COLS);
-  const n = G.placeNode(st,'pulser',c,r);
-  if (!n) throw new Error('place fail '+name);
+// lay the melody out as a contour (x = phrase order, y = pitch) instead of
+// dumping every node onto the bottom rows — see tools/furelise-layout.js.
+const cells = layout(G.CONFIG.COLS, G.CONFIG.ROWS, G.CONFIG.CORE_C, G.CONFIG.CORE_R);
+cells.forEach(({ c, r, p }) => {
+  const [name, deg, oct, acc] = p;
+  const n = G.placeNode(st, 'pulser', c, r);
+  if (!n) throw new Error('place fail ' + name + ' @(' + c + ',' + r + ')');
   n.pitch = deg - RU.rowToDegree(r, G.CONFIG.ROWS);
   n.octave = oct; n.accidental = acc;
 });

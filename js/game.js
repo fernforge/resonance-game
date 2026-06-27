@@ -1592,6 +1592,51 @@
     ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   }
 
+  // --- cached glow sprites (PERF) -------------------------------------
+  // ctx.shadowBlur is the single most expensive 2D-canvas op (software-rasterised,
+  // re-blurred every fill). Drawing dozens of glowing nodes/enemies with shadowBlur
+  // tanked the loop to ~4 fps. Instead we bake each glow ONCE into a small offscreen
+  // canvas (a radial gradient in the glow colour) and stamp it with drawImage —
+  // additive, GPU-friendly, ~30× cheaper. Sprites are cached by quantised colour+radius.
+  const _glowCache = new Map();
+  function glowSprite(hsl, rad) {
+    if (typeof document === 'undefined') return null;
+    const r = Math.max(3, Math.round(rad));
+    const key = hsl + '@' + r;
+    let c = _glowCache.get(key);
+    if (c) return c;
+    const R = r * 2.2;                       // glow reaches ~2.2× the node radius
+    const size = Math.ceil(R * 2);
+    c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const cc = size / 2;
+    const grd = g.createRadialGradient(cc, cc, 0, cc, cc, R);
+    // hsl(...) -> hsla(...,a) so the halo fades smoothly in its own hue.
+    // any non-hsl colour (hex/rgb) falls back to a transparent-black fade.
+    const isHsl = /^hsl\(/.test(hsl);
+    const tint = (a) => isHsl
+      ? hsl.replace(/^hsl\(/, 'hsla(').replace(/\)\s*$/, ',' + a + ')')
+      : (a > 0 ? hsl : 'rgba(0,0,0,0)');
+    // small solid-ish core, then a quick soft falloff — avoids the washed-out
+    // white blob that a wide opaque plateau produced when glows overlap.
+    grd.addColorStop(0, hsl);
+    grd.addColorStop(0.16, tint(0.85));
+    grd.addColorStop(0.5, tint(0.28));
+    grd.addColorStop(1, tint(0));
+    g.fillStyle = grd; g.fillRect(0, 0, size, size);
+    if (_glowCache.size > 512) _glowCache.clear();   // bound memory on long runs
+    _glowCache.set(key, c);
+    return c;
+  }
+  // stamp a cached glow centred at (x,y). assumes caller set composite 'lighter'.
+  function stampGlow(hsl, x, y, rad, alpha) {
+    const s = glowSprite(hsl, rad);
+    if (!s) return;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(s, x - s.width / 2, y - s.height / 2);
+  }
+
   function render() {
     // background
     const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -1660,19 +1705,20 @@
       const pcol = pitchColor(n, G, 1, firing ? 8 : 0);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const glow = (firing ? 0.9 : 0.3) + Math.min(0.25, (lvl - 1) * 0.06);
-      ctx.shadowColor = pcol; ctx.shadowBlur = (firing ? 28 : 12) + (lvl - 1) * 3;
-      ctx.fillStyle = pcol; ctx.globalAlpha = glow;
+      const glow = (firing ? 0.85 : 0.22) + Math.min(0.22, (lvl - 1) * 0.06);
+      // soft glow via cached sprite (replaces per-fill shadowBlur — see glowSprite)
+      stampGlow(pcol, cx, cy, rad * (firing ? 1.3 : 1.05), glow);
+      ctx.globalAlpha = Math.min(1, glow + 0.25); ctx.fillStyle = pcol;
       drawNodeShape(n.type, cx, cy, rad * (firing ? 1.12 : 1));
       ctx.fill();
       // thin type-coloured core keeps node TYPE identity readable under the tint
-      ctx.globalAlpha = glow * 0.9; ctx.shadowBlur = 0; ctx.fillStyle = def.color;
+      ctx.globalAlpha = glow * 0.9; ctx.fillStyle = def.color;
       drawNodeShape(n.type, cx, cy, rad * (firing ? 1.12 : 1) * 0.5);
       ctx.fill();
       // charged-hit halo: a rested node just landed a crit
       if (n.critFlash > 0) {
+        stampGlow('hsl(0,0%,100%)', cx, cy, rad * 1.6, n.critFlash * 0.6);
         ctx.globalAlpha = n.critFlash * 0.8;
-        ctx.shadowColor = '#fff'; ctx.shadowBlur = 30;
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.arc(cx, cy, rad * (1.5 + (1 - n.critFlash) * 0.8), 0, TAU); ctx.stroke();
       }
@@ -1687,7 +1733,7 @@
       const acol = pcColor(nodePc, 60, 90);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.shadowColor = acol; ctx.shadowBlur = firing ? 16 : 8;
+      if (firing) stampGlow(acol, cx, cy, rad * 1.3, 0.55);
       ctx.globalAlpha = firing ? 0.9 : 0.5; ctx.lineWidth = firing ? 3 : 2;
       ctx.strokeStyle = acol;
       ctx.beginPath(); ctx.arc(cx, cy, rad + 8, 0, TAU); ctx.stroke();
@@ -1727,7 +1773,7 @@
       const cx = w2sX(e.x), cy = w2sY(e.y), rad = e.radius * sc;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.shadowColor = e.color; ctx.shadowBlur = 14;
+      stampGlow(e.color, cx, cy, rad, 0.6);
       ctx.fillStyle = e.hitFlash > 0 ? '#ffffff' : e.color;
       ctx.globalAlpha = 0.9;
       drawEnemyShape(e.type, cx, cy, rad, G.time);
