@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>RESONANCE — build a machine that fights to a beat</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="stat" id="stat-wave"><label>WAVE</label><span>1</span></div>
+      <div class="stat" id="stat-core"><label>CORE</label><span>100</span></div>
+      <div class="stat" id="stat-energy"><label>ENERGY</label><span>0</span></div>
+      <div class="stat" id="stat-score"><label>SCORE</label><span>0</span></div>
+      <div class="stat groove" id="stat-groove"><label>GROOVE</label><span>x1.0</span></div>
+      <div class="stat reso" id="stat-reso"><label>RESONANCE</label><span>50%</span></div>
+      <div class="chord-ribbon" id="chord-ribbon" title="the chord progression your battle plays — it advances as the song builds"></div>
+    </div>
+    <div class="hud-bottom">
+      <div id="tray" class="tray"></div>
+      <div id="controls">
+        <button id="btn-maestro" class="ghost" title="auto-arrange every node into one interlocking groove (click again to re-roll)">✦ MAESTRO</button>
+        <button id="btn-sharecode" class="ghost" title="copy a code for this exact board — a friend can paste it to hear your song">⧉ COPY BOARD</button>
+        <button id="btn-start" class="ghost">▶ START WAVE</button>
+        <button id="btn-mute" class="ghost" title="mute">🔊</button>
+        <button id="btn-help" class="ghost" title="help">?</button>
+      </div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <!-- Title -->
+  <div id="title" class="overlay">
+    <div class="title-inner">
+      <h1>RES<span class="o">O</span>NANCE</h1>
+      <p class="tag">Build a living machine that fights to a beat.<br/>Every battle composes its own music.</p>
+      <button id="btn-play" class="primary">PLAY</button>
+      <div class="title-row">
+        <button id="btn-daily" class="ghost">◷ DAILY CHALLENGE</button>
+        <button id="btn-loadcode" class="ghost" title="paste a friend's board code to play their exact composition">⧉ LOAD CODE</button>
+        <button id="btn-upgrades" class="ghost">✦ UPGRADES</button>
+        <button id="btn-howto" class="ghost">HOW TO PLAY</button>
+      </div>
+      <div id="title-meta" class="title-meta"></div>
+      <p class="credit">a generative tower-defense roguelite · headphones recommended 🎧</p>
+    </div>
+  </div>
+
+  <!-- Draft -->
+  <div id="draft" class="overlay hidden">
+    <div class="draft-inner">
+      <h2>WAVE CLEARED</h2>
+      <p class="sub">Choose your reward</p>
+      <div id="draft-cards" class="cards"></div>
+    </div>
+  </div>
+
+  <!-- How to -->
+  <div id="howto" class="overlay hidden">
+    <div class="howto-inner">
+      <h2>HOW TO PLAY</h2>
+      <ul>
+        <li><b>Place nodes</b> on the grid. Pick a node from the tray (bottom), then click a cell. Each costs <b>energy</b>.</li>
+        <li>A global <b>Pulse</b> ticks. On the beats it's tuned to, a node <b>fires</b> at nearby enemies — and plays a <b>note</b>. Your whole board becomes music.</li>
+        <li><b>Dissonance</b> flows toward your <b>Core</b>. Don't let it through.</li>
+        <li>Behind your notes runs a <b>chord progression</b> (named in the top bar — every run gets its own, like <i>♪ AURORA</i>). A <b>bassline</b> follows it and the board pulses its colour each time the chord turns over, so your defense isn't just rhythmic — it's a whole <b>evolving song</b> you can share.</li>
+        <li><b>Silence is power.</b> A node that <b>rests</b> charges up — its next hit <b>crits</b> (white flash). Firing the <i>same</i> node every beat fatigues it (each repeat hits softer). <b>Spaced, syncopated</b> parts out-damage a flat wall of sound.</li>
+        <li><b>RESONANCE</b> (top bar) measures how musical your board is — sparsity, syncopation, and variety between parts. It sets how high <b>Groove</b> can climb, so a monotone "everything on every beat" board is the <i>weakest</i> build, not the strongest. Compose interlocking rhythms; hit the <b>GROOVE ⟳</b> button on a node for instant patterns.</li>
+        <li><b>Tuning dozens of nodes?</b> Hit <b>✦ MAESTRO</b> (bottom bar) to auto-arrange the <i>whole board</i> into one interlocking groove in a click — tap again to re-roll. Or tune one node and press <b>⬢ ALL TYPE</b> in its popup to stamp that groove across its whole section.</li>
+        <li>Kill enemies <b>on the beat</b> to build <b>Groove</b> — a score multiplier and pure style.</li>
+        <li>Node types synergize: <b>Amplifiers</b> buff neighbors (no beats — a warm pad), <b>Relays</b> have <i>no beats of their own</i> and echo any neighbor that fires, <b>Resonators</b> hit huge but only on a beat where a neighbor also fires (<b>sync</b>).</li>
+        <li>Click a <b>placed node</b> to retune which beats it fires on (relays just echo, so there's nothing to set), or spend energy to <b>UPGRADE</b> it — leveled nodes hit harder, so you can grow <i>taller</i> instead of just wider.</li>
+        <li><b>Every node is a real note</b> (shown in its popup, e.g. <i>E5</i>). Tune it with <b>PITCH ▼/▲</b> (step up/down the scale), <b>OCT ▼/▲</b> (jump an octave), and <b>♭ / ♮ / ♯</b> (bend a semitone for chromatic colour). A node's pitch also rises with its <b>row</b> (higher = higher) and its <b>level</b> — so leveling up for power also lifts the note; drop it back with PITCH ▼ to forge a <i>powerful low voice</i>. Notes are tinted by pitch on the board, so you can <i>see</i> the melody. The board is genuinely an instrument — it can play a real tune in key (see <code>FUR-ELISE.md</code>).</li>
+        <li><b>An enemy's COLOUR is its note — match it to shatter.</b> Every enemy is tuned to a pitch from the live chord and <i>wears that pitch as its colour</i> (the same hue your nodes glow). A node's pulse carries <i>its</i> note. When the colours line up, the note <b>resonates</b> — the enemy <b>SHATTERS</b> for huge bonus damage (a bright ring in its own colour, a bell, "♪ +score"). When they clash (a tritone or semitone apart), the note is <b>DISSONANT</b> and barely scratches (a dull grey shield clink). So a one-note wall can only kill <i>one colour</i> of enemy — a varied, <b>rainbow board</b> that plays a real chord covers the whole swarm. Pitch isn't decoration: colour = note = damage.</li>
+        <li><b>✦ SHIFTERS keep a varied board honest.</b> The five-sided <b>Shifter</b> (from wave 6) <i>re-tunes itself</i> every couple of seconds — its colour flips to a new chord tone while it's still walking in, so the single note that shattered it a moment ago now barely scratches. You can't park one perfect note against it; only a board that already <b>covers several colours</b> always has the right answer ready. Variety isn't optional — it's the counter.</li>
+        <li><b>Buffs sing, too.</b> An adjacent <b>Amplifier</b> lifts a node a clean octave (stronger <i>and</i> brighter), and when your <b>RESONANCE</b> climbs past 75% the whole board rises an octave — playing well literally makes the machine soar. Every buff effect is octave-based, so it never knocks your tune out of key. <b>✦ MAESTRO</b> also balances pitch into a symmetric <i>arch</i> across the board, so a tidy, mirrored layout sounds as composed as it looks.</li>
+        <li>Every <b>5 waves the board grows a ring bigger</b>, so your machine never runs out of room. Survive a wave, then <b>draft</b> a new node or upgrade. Go as long as you can.</li>
+        <li>Every <b>10th wave is a BOSS wave</b> — the <b>Conductor</b> arrives last and shatters into a swarm when it falls. Big risk, big payout.</li>
+        <li>Every run earns <b>Resonance Shards</b>. Spend them in <b>UPGRADES</b> for permanent head starts that carry across runs.</li>
+        <li>Try the <b>Daily Challenge</b> — a fixed seed + twist that's the same for everyone that day. Chase your best and <b>share</b> the result card.</li>
+        <li><b>Share your song.</b> Hit <b>⧉ COPY BOARD</b> (bottom bar) and a <i>one-click link</i> to your <i>exact</i> board lands on your clipboard. Anyone who opens it drops straight into your composition — every pitch, octave and rhythm rebuilt note-for-note. (No link? You'll get a short <b>R1~</b> code instead — a friend pastes it under <b>⧉ LOAD CODE</b> on the menu.) The board <i>is</i> the song, so the song is what you share.</li>
+      </ul>
+      <button id="btn-howto-close" class="primary">GOT IT</button>
+    </div>
+  </div>
+
+  <!-- Upgrades shop -->
+  <div id="upgrades" class="overlay hidden">
+    <div class="shop-inner">
+      <h2>UPGRADES</h2>
+      <p class="sub">Spend <b class="shard-word">Resonance Shards</b> earned from every run. These carry over forever.</p>
+      <div class="shard-bank">YOU HAVE <b id="shop-shards">0</b> ✦ SHARDS</div>
+      <div class="shop-tabs">
+        <button id="tab-perks" class="shop-tab active">⚡ PERKS</button>
+        <button id="tab-cosmetics" class="shop-tab">✦ COSMETICS</button>
+      </div>
+      <div id="perk-cards" class="cards"></div>
+      <div id="cosmetic-cards" class="hidden"></div>
+      <div class="shop-actions">
+        <button id="btn-shop-close" class="primary">BACK</button>
+        <button id="btn-shop-reset" class="ghost danger" title="erase all progress">RESET PROGRESS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div id="gameover" class="overlay hidden">
+    <div class="go-inner">
+      <h2 id="go-title">THE MUSIC STOPPED</h2>
+      <div id="go-stats"></div>
+      <div id="go-shards" class="go-shards hidden"></div>
+      <div class="go-actions">
+        <button id="btn-retry" class="primary">PLAY AGAIN</button>
+        <button id="btn-share" class="ghost">⧉ SHARE RESULT</button>
+        <button id="btn-go-menu" class="ghost">MENU</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/harmony.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/sharecode.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
