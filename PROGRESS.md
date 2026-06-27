@@ -8,6 +8,24 @@ Core systems (done, see Log): pitch=colour=tone=damage smooth blend (run 13); Sh
 the LEAK FIX reshaping CONSONANCE so mono leaks & rainbow covers (run 14, rainbow>mono 14/14);
 BOARD SHARE CODES (run 15, js/sharecode.js).
 
+## RUN 18 — PERF FIX (4fps→60fps) + FÜR ELISE CONTOUR LAYOUT. SHIPPED.
+User reported the whole game was "super slow and super laggy" + Für Elise nodes "all at the
+bottom". ROOT CAUSE: `ctx.shadowBlur` per node/enemy/projectile every frame — software-rasterised,
+re-blurred each fill. 17 nodes = ~4.8 fps (measured in Playwright). FIX (js/game.js):
+- New `glowSprite(hsl,rad)` + `stampGlow(hsl,x,y,rad,alpha)` near drawRoundRect (~line 1593): bakes
+  each glow ONCE into a cached offscreen radial-gradient canvas (keyed by colour+radius, bounded to
+  512), stamped with drawImage under composite 'lighter'. ~30× cheaper than shadowBlur.
+- Replaced shadowBlur in the NODE loop (glow, crit halo, pitch-class aura), the ENEMY glow, kept
+  core's single per-frame shadow (negligible). Tuned sprite gradient stops + node glow alpha so
+  overlapping halos don't wash to white (steady 0.22 / firing 0.85, reach 2.2×).
+- MEASURED in real Chromium: build screen 4.8→60fps; stress (50 enemies + 300 particles) = 60fps.
+- FÜR ELISE LAYOUT: new `tools/furelise-layout.js` (PHRASE + `layout(cols,rows,coreC,coreR)`) places
+  the 17 notes as a MELODIC CONTOUR (x = phrase order, y = pitch, top=high), collisions/core nudged
+  to free cells — all 17 unique. furelise-link.js now uses it; NEW share code regenerated and pasted
+  into `furelise.html` redirect + `FUR-ELISE.md`. Verified: redirect loads 17 nodes, names exact,
+  zero console errors. NOTE: changing layout changes the R1~ code — both files were updated in sync.
+- Pushed to main (Pages redeploys ~30-60s). git safe.directory was needed once: already configured.
+
 ## RUN 17 — SHIPPED LIVE + FÜR ELISE DEMO LINK (the deliverable).
 The whole game is now PUBLIC on GitHub Pages and the Für Elise board has a real, clickable link.
 - **Live game:** https://fernforge.github.io/resonance-game/  (repo: github.com/fernforge/resonance-game)
@@ -90,10 +108,16 @@ theses: sparse>all-on 14/14 AND rainbow>mono 14/14 (re-verified this run).
 - Online leaderboards. (Sandbox can't run Chromium — verify via jsdom + node tools, not pixels.)
 
 ## Next concrete step
-Share loop complete (run 16: links + auto-load). Pick any item from "What is left". Best next:
-(a) more enemy/boss content for depth (testable in smoke.js); (b) a per-node skin/particle pass
-for visual variety; (c) shareable replay CLIP (MediaRecorder — NOT headless-testable, skip in
-sandbox). Recommend (a) — adds depth and is fully node-testable.
+Perf + Für Elise layout fixed & shipped (run 18). If continuing: (a) optionally also route the CORE
+glow + groove-aura + projectile trails through stampGlow for extra headroom on huge waves (already
+60fps, low priority); (b) more enemy/boss content (testable in smoke.js); (c) per-node skin pass.
+Recommend confirming the live Pages deploy looks right, then (b).
+
+## PERF RULE (run 18) — NEVER use ctx.shadowBlur in the per-frame render loop.
+It is the #1 canvas killer (software-rasterised). Use `stampGlow(hslColor, x, y, rad, alpha)` (cached
+glow sprites, js/game.js ~1593) instead. stampGlow expects an `hsl(...)` string (pcColor/pitchColor
+return these); hex/rgb fall back to a transparent-black fade. Verify FPS with Playwright after any
+render change (sandbox HAS Chromium via NODE_PATH=$(npm root -g); see /tmp/*.js scripts this run).
 
 ## Key decisions & why
 - Natural minor (not pentatonic) for melody range — still single-key consonant; type degOffs +
