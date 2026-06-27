@@ -1,5 +1,14 @@
 # Playing "Für Elise" on a RESONANCE board
 
+> ### ▶ Play the live demo
+> **https://fernforge.github.io/resonance-game/furelise.html**
+>
+> One click loads the exact 17-node board below and plays the Für Elise opening
+> (tap 🔊 to enable audio). Full share link (the same thing, no redirect):
+> `index.html?board=R1~AQ0JABEAAAgBEkFVAAEIARFCVQACCAESQVUAAwgBEUJVAAQIARJBVQAFCAEPQVUABggBEUFVAAcIARBBVQAICAEOQVUACQgBEDFVAAoIARIxVQALCAEOQVUADAgBD0FVAAAHARExVQABBwETMlUAAgcBDkFVAAMHAQ9BVQ`
+> Regenerate it any time with `node tools/furelise-link.js "<base-url>"`.
+
+
 RESONANCE isn't a music toy bolted onto a tower-defense — the board **is** an
 instrument. Every node plays a real, in-tune note, and you steer that note with
 the same four controls the retune popup gives you:

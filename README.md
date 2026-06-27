@@ -1,5 +1,8 @@
 # RESONANCE 🎛️🎵
 
+**▶ Live demo:** https://fernforge.github.io/resonance-game/ — Für Elise board: https://fernforge.github.io/resonance-game/furelise.html
+
+
 > **Build a living machine that fights to a beat — and every battle composes its own music.**
 
 A browser game prototype: a fusion of **tower-defense + automation + a generative

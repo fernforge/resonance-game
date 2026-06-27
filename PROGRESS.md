@@ -8,6 +8,18 @@ Core systems (done, see Log): pitch=colour=tone=damage smooth blend (run 13); Sh
 the LEAK FIX reshaping CONSONANCE so mono leaks & rainbow covers (run 14, rainbow>mono 14/14);
 BOARD SHARE CODES (run 15, js/sharecode.js).
 
+## RUN 17 — SHIPPED LIVE + FÜR ELISE DEMO LINK (the deliverable).
+The whole game is now PUBLIC on GitHub Pages and the Für Elise board has a real, clickable link.
+- **Live game:** https://fernforge.github.io/resonance-game/  (repo: github.com/fernforge/resonance-game)
+- **Für Elise demo (short):** https://fernforge.github.io/resonance-game/furelise.html  → JS-redirects to
+  `index.html?board=R1~AQ0JABEA…BQ9BVQ` (full code in FUR-ELISE.md / `node tools/furelise-link.js <base>`).
+- New: `tools/furelise-link.js` builds the 17-note Für Elise board, encodes via RShare, asserts a
+  bit-identical round-trip (note name + freq), prints CODE/REL/LINK. `furelise.html` = redirect page.
+- VERIFIED in real Chromium/Playwright: link auto-loads `?board=` at boot → building state, all 17
+  nodes present, names = E5 D#5 E5 D#5 E5 B4 D5 C5 A4 C4 E4 A4 B4 E4 G#4 B4 C5, zero console errors.
+- Deploy = git push to `main` (Pages serves `/` from main). Account: fernforge (GH_TOKEN in env).
+  To redeploy: edit files → `git add -A && git commit && git push`; Pages rebuilds in ~30–60s.
+
 ## RUN 16 COMPLETE — ONE-CLICK SHARE LINKS (closes the share loop). 265 green.
 `?board=R1~…` URL → instant playable song. Pure helpers added to RShare (js/sharecode.js):
 - `boardFromUrl(url|search|hash|rawCode)` → board code or null (regex `[?&#]board=…`, decodeURIComponent).
